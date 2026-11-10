@@ -233,16 +233,17 @@ uvw = np.asarray(sample["intrinsics"]) @ camera[:, camera[2] > 1.0]
 pixels, depth = uvw[:2] / uvw[2], uvw[2]
 ```
 
-Until that module exists in euler-loading (`verify` reports it), pass explicit
-loaders; `tests/reference_loaders.py` holds minimal ones. The functions it must
-provide:
+euler-loading's `nuscenes` module (in the release after 2.39.0) reads the
+four scopes, and the heads name it, so the dataset loads without explicit
+loaders; `verify` warns when the installed euler-loading predates it. Its
+functions:
 
 | Function | Reads | Returns |
 |---|---|---|
 | `rgb` | `.jpg` | image in `[0, 1]` |
 | `lidar_point_cloud` | `.pcd.bin` | `(N, 5)` float32 |
 | `read_intrinsics` | calibration file | `camera.intrinsics`, 3×3 |
-| `read_extrinsics` | calibration file, `@selects_per_sample` by sample ID | `frames[id].lidar.lidar_to_camera`, 4×4 |
+| `read_extrinsics` | calibration file, selected per sample by ID | `frames[id].lidar.lidar_to_camera`, 4×4 |
 
 ## Limits
 

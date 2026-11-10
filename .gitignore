@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.coverage
+.pytest_cache/
+.ruff_cache/
+.venv/
+build/
+dist/
+
+# Editors and operating systems
+.DS_Store
+.vscode/
+
+# Local tooling and agent state
+.claude/
+
+# Local datasets and scratch output: never commit downloads or prepared data
+/cluster/
+*.tgz
+*.tar
+*.tar.gz

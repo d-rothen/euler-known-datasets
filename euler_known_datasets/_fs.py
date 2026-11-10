@@ -57,3 +57,23 @@ def missing_files(
     """The *relpaths* that are not regular files below *root* (links followed)."""
     cache = cache or DirectoryCache()
     return [rel for rel in relpaths if not cache.is_file(root / rel)]
+
+
+def list_files(root: Path, subdir: str = "", *, include_hidden: bool = False) -> list[str]:
+    """Regular files below ``root/subdir`` as sorted paths relative to *root*.
+
+    Walks with ``os.scandir`` (one listing per directory, no per-file stat) and
+    follows directory symlinks. Hidden entries such as ``.ds_crawler`` are
+    skipped unless *include_hidden*.
+    """
+    root = Path(root)
+    start = root / subdir if subdir else root
+    found: list[str] = []
+    for directory, dirnames, filenames in os.walk(start, followlinks=True):
+        if not include_hidden:
+            dirnames[:] = [d for d in dirnames if not d.startswith(".")]
+            filenames = [f for f in filenames if not f.startswith(".")]
+        relative = Path(directory).relative_to(root)
+        for name in filenames:
+            found.append((relative / name).as_posix())
+    return sorted(found)

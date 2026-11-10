@@ -1,11 +1,11 @@
-"""Optional head validation against the installed euler-loading.
+"""Head validation by the rules euler-loading loads heads with.
 
-euler-loading registers the validator of the ``euler_loading`` head addon with
-euler-dataset-contract when it is imported (for example, it only allows
-``hierarchy_scope`` together with ``used_as: condition``). Without that import,
-ds-crawler accepts any addon payload, so a head could pass here and be rejected
-when the dataset is loaded. When euler-loading is installed, import its
-validator so heads are checked by the same rules that will load them.
+The rules of the ``euler_loading`` head addon (for example, ``hierarchy_scope``
+only together with ``used_as: condition``) live in euler-dataset-contract
+from 0.14 and are registered explicitly. Older contracts leave them to
+euler-loading, which registers them when it is imported. Either way, register
+them before writing or verifying heads, so a head that passes here is one
+euler-loading accepts.
 """
 
 from __future__ import annotations
@@ -19,12 +19,22 @@ _state: dict[str, bool] = {}
 
 
 def register_euler_loading_validator() -> bool:
-    """Register euler-loading's addon validator; ``False`` if not installed."""
+    """Make sure the ``euler_loading`` addon rules are registered.
+
+    Returns ``False`` only when neither the contract nor an installed
+    euler-loading provides them.
+    """
     if "registered" not in _state:
         try:
-            importlib.import_module("euler_loading._dataset_contract")
+            from euler_dataset_contract import register_euler_loading_addon_validator
+        except ImportError:  # euler-dataset-contract < 0.14
+            try:
+                importlib.import_module("euler_loading._dataset_contract")
+                _state["registered"] = True
+            except ImportError:
+                logger.debug("no euler_loading addon rules available; heads not fully checked")
+                _state["registered"] = False
+        else:
+            register_euler_loading_addon_validator()
             _state["registered"] = True
-        except ImportError:
-            logger.debug("euler-loading not installed; its head addon rules are not checked")
-            _state["registered"] = False
     return _state["registered"]

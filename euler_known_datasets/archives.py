@@ -1,4 +1,4 @@
-"""Safe, selective and resumable extraction of downloaded tar archives.
+"""Safe, selective and resumable extraction of downloaded archives.
 
 Only regular files are ever written. Members with absolute paths or ``..``
 components raise :class:`UnsafeArchiveError`; links, devices and FIFOs are
@@ -7,9 +7,10 @@ interrupted run never leaves a truncated file under its final name. A file that
 already exists with the member's size is not rewritten, so re-running after an
 interruption only writes what is missing.
 
-Archives are read as a stream (``r|*``): a dataset archive is decompressed once,
-front to back, whatever the selection. Selecting members saves disk space and
-write time, not decompression time.
+Zip archives are read through their central directory, so a selection only
+reads the selected members. Tar archives are read as a stream (``r|*``): they
+are decompressed once, front to back, whatever the selection, so selecting
+members saves disk space and write time, not decompression time.
 """
 
 from __future__ import annotations
@@ -18,11 +19,13 @@ import hashlib
 import logging
 import os
 import shutil
+import stat
 import tarfile
 import time
+import zipfile
 from dataclasses import asdict, dataclass
 from pathlib import Path, PurePosixPath
-from typing import Callable, Iterable, Optional
+from typing import BinaryIO, Callable, Iterable, Iterator, Optional
 
 from ._fs import DirectoryCache
 from ._jsonio import load_json, write_json_atomic
@@ -77,6 +80,69 @@ def _is_within(path: Path, root: Path) -> bool:
     return True
 
 
+@dataclass
+class _Member:
+    name: str
+    is_file: bool
+    is_dir: bool
+    size: int
+    open: Callable[[], Optional[BinaryIO]]
+
+
+def is_zip_archive(archive: Path) -> bool:
+    return archive.suffix.lower() == ".zip" or zipfile.is_zipfile(archive)
+
+
+def _tar_members(archive: Path) -> Iterator[_Member]:
+    # Stream mode: each member must be consumed before the next is read.
+    with tarfile.open(archive, mode="r|*") as tar:
+        for member in tar:
+            yield _Member(
+                member.name,
+                member.isfile(),
+                member.isdir(),
+                member.size,
+                lambda member=member: tar.extractfile(member),
+            )
+
+
+def _zip_members(archive: Path) -> Iterator[_Member]:
+    with zipfile.ZipFile(archive) as zf:
+        for info in zf.infolist():
+            mode = info.external_attr >> 16
+            is_dir = info.is_dir()
+            # Unix zip tools record the file type; a link must not be extracted
+            # as a regular file holding its target path. Writers that record no
+            # type (only permission bits) are writing regular files.
+            kind = stat.S_IFMT(mode)
+            is_file = not is_dir and kind in (0, stat.S_IFREG)
+            yield _Member(
+                info.filename,
+                is_file,
+                is_dir,
+                info.file_size,
+                lambda info=info: zf.open(info),
+            )
+
+
+def _members(archive: Path) -> Iterator[_Member]:
+    return _zip_members(archive) if is_zip_archive(archive) else _tar_members(archive)
+
+
+def archive_members(archive: str | os.PathLike[str]) -> list[str]:
+    """The normalised relative paths of an archive's regular files.
+
+    Cheap for zip archives, which list their members in a central directory. A
+    tar archive has to be read to its end.
+    """
+    names = []
+    for member in _members(Path(archive)):
+        relpath = member_relpath(member.name)
+        if relpath is not None and member.is_file:
+            names.append(relpath.as_posix())
+    return names
+
+
 def extract_archive(
     archive: str | os.PathLike[str],
     destination: str | os.PathLike[str],
@@ -88,7 +154,8 @@ def extract_archive(
     """Extract the regular files of *archive* below *destination*.
 
     Args:
-        archive: A tar archive, optionally gzip/bz2/xz compressed.
+        archive: A zip archive, or a tar archive, optionally gzip/bz2/xz
+            compressed.
         destination: Directory to extract into; created if missing.
         select: Called with each member's normalised relative path; members it
             rejects are skipped. ``None`` extracts every regular file.
@@ -104,64 +171,63 @@ def extract_archive(
     checked_dirs: set[Path] = set()
     listings = DirectoryCache()
 
-    with tarfile.open(archive, mode="r|*") as tar:
-        for member in tar:
-            stats.members += 1
-            relpath = member_relpath(member.name)
-            if relpath is None or member.isdir():
-                continue
-            if not member.isfile():
-                stats.skipped_special += 1
-                logger.debug("skipping non-regular member %s in %s", member.name, archive.name)
-                continue
-            if select is not None and not select(relpath.as_posix()):
-                stats.skipped_unselected += 1
-                continue
+    for member in _members(archive):
+        stats.members += 1
+        relpath = member_relpath(member.name)
+        if relpath is None or member.is_dir:
+            continue
+        if not member.is_file:
+            stats.skipped_special += 1
+            logger.debug("skipping non-regular member %s in %s", member.name, archive.name)
+            continue
+        if select is not None and not select(relpath.as_posix()):
+            stats.skipped_unselected += 1
+            continue
 
-            target = root.joinpath(*relpath.parts)
-            parent = target.parent
-            if parent not in checked_dirs:
-                parent.mkdir(parents=True, exist_ok=True)
-                # Never write through a symlink that points out of the destination,
-                # e.g. a directory linked by an earlier ``--media symlink`` run.
-                if not _is_within(parent.resolve(), real_root):
-                    raise UnsafeArchiveError(
-                        f"{parent} resolves outside {root}; refusing to extract "
-                        f"{relpath} through a symlink"
-                    )
-                checked_dirs.add(parent)
-            # Existence comes from one listing per directory, not a stat per member:
-            # on network filesystems a stat is a server round trip.
-            existing = listings.entry(target)
-            if existing is not None:
-                if existing.is_symlink():
-                    raise UnsafeArchiveError(f"refusing to overwrite symlink {target}")
-                if not overwrite and listings.size(target) == member.size:
-                    stats.skipped_existing += 1
-                    continue
-
-            source = tar.extractfile(member)
-            if source is None:  # pragma: no cover - isfile() members always have data
-                stats.skipped_special += 1
-                continue
-            partial = target.with_name(f".{target.name}.part")
-            with source, open(partial, "wb") as handle:
-                shutil.copyfileobj(source, handle, 1 << 20)
-            os.replace(partial, target)
-            stats.extracted += 1
-            stats.bytes_written += member.size
-
-            now = time.monotonic()
-            if now - last_log >= log_every:
-                last_log = now
-                logger.info(
-                    "%s: %d members read, %d extracted (%.1f GB), %d already present",
-                    archive.name,
-                    stats.members,
-                    stats.extracted,
-                    stats.bytes_written / 1e9,
-                    stats.skipped_existing,
+        target = root.joinpath(*relpath.parts)
+        parent = target.parent
+        if parent not in checked_dirs:
+            parent.mkdir(parents=True, exist_ok=True)
+            # Never write through a symlink that points out of the destination,
+            # e.g. a directory linked by an earlier ``--media symlink`` run.
+            if not _is_within(parent.resolve(), real_root):
+                raise UnsafeArchiveError(
+                    f"{parent} resolves outside {root}; refusing to extract "
+                    f"{relpath} through a symlink"
                 )
+            checked_dirs.add(parent)
+        # Existence comes from one listing per directory, not a stat per member:
+        # on network filesystems a stat is a server round trip.
+        existing = listings.entry(target)
+        if existing is not None:
+            if existing.is_symlink():
+                raise UnsafeArchiveError(f"refusing to overwrite symlink {target}")
+            if not overwrite and listings.size(target) == member.size:
+                stats.skipped_existing += 1
+                continue
+
+        source = member.open()
+        if source is None:  # pragma: no cover - regular members always have data
+            stats.skipped_special += 1
+            continue
+        partial = target.with_name(f".{target.name}.part")
+        with source, open(partial, "wb") as handle:
+            shutil.copyfileobj(source, handle, 1 << 20)
+        os.replace(partial, target)
+        stats.extracted += 1
+        stats.bytes_written += member.size
+
+        now = time.monotonic()
+        if now - last_log >= log_every:
+            last_log = now
+            logger.info(
+                "%s: %d members read, %d extracted (%.1f GB), %d already present",
+                archive.name,
+                stats.members,
+                stats.extracted,
+                stats.bytes_written / 1e9,
+                stats.skipped_existing,
+            )
 
     stats.seconds = round(time.monotonic() - started, 3)
     return stats
@@ -192,8 +258,8 @@ class ExtractionLedger:
 
     @staticmethod
     def _identity(archive: Path) -> dict:
-        stat = archive.stat()
-        return {"name": archive.name, "size": stat.st_size, "mtime": int(stat.st_mtime)}
+        info = archive.stat()
+        return {"name": archive.name, "size": info.st_size, "mtime": int(info.st_mtime)}
 
     def is_complete(self, archive: Path, destination: Path, fingerprint: str) -> bool:
         path = self._entry_path(archive, destination)

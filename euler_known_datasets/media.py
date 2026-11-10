@@ -24,17 +24,23 @@ import errno
 import os
 import shutil
 from pathlib import Path
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
-from ._fs import DirectoryCache, missing_files
+from ._fs import DirectoryCache, list_files, missing_files
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .recipe import PrepareContext
 
 __all__ = [
     "IN_PLACE",
     "MEDIA_MODES",
     "MediaError",
     "link_top_level",
+    "list_files",
     "materialize_files",
     "missing_files",
+    "place_extracted",
+    "resolve_media",
 ]
 
 MEDIA_MODES = ("auto", "symlink", "hardlink", "copy", "extract")
@@ -131,3 +137,47 @@ def materialize_files(
             os.replace(partial, dst)
         counts[key] += 1
     return counts
+
+
+def resolve_media(ctx: "PrepareContext", *, extracted: bool, archives: bool) -> str:
+    """The strategy a run will use, from the requested one and what the source has.
+
+    *extracted*: the source holds every needed file extracted. *archives*: the
+    source holds the archives they come from. ``auto`` links extracted files
+    and extracts otherwise; preparing in place returns :data:`IN_PLACE`.
+    """
+    if ctx.in_place:
+        return IN_PLACE
+    mode = ctx.media
+    if mode == "auto":
+        mode = "symlink" if extracted else "extract"
+    if mode in ("symlink", "hardlink", "copy") and not extracted:
+        raise MediaError(
+            f"media={mode!r} needs the files extracted in {ctx.source}; "
+            "use media='extract' with the downloaded archives"
+        )
+    if mode == "extract" and not archives:
+        raise MediaError(f"media='extract' needs the downloaded archives in {ctx.source}")
+    return mode
+
+
+def place_extracted(
+    ctx: "PrepareContext", relpaths: Iterable[str], *, mode: str, top_level: Iterable[str]
+) -> None:
+    """Bring files extracted in the source into the output with *mode*.
+
+    ``symlink`` links the *top_level* entries (directories or files directly
+    below the source); ``hardlink`` and ``copy`` handle each of *relpaths*.
+    """
+    relpaths = list(relpaths)
+    missing = missing_files(ctx.source, relpaths)
+    if missing:
+        raise MediaError(
+            f"{len(missing)} needed files are not in {ctx.source} (e.g. {missing[0]})"
+        )
+    if mode == "symlink":
+        link_top_level(ctx.source, ctx.output, top_level)
+    elif mode in ("hardlink", "copy"):
+        materialize_files(ctx.source, ctx.output, relpaths, mode)
+    else:
+        raise ValueError(f"place_extracted handles symlink, hardlink and copy, not {mode!r}")

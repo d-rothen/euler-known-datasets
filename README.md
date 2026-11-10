@@ -93,10 +93,15 @@ heads name.
 
 | Recipe | Dataset | Prepared modalities |
 |---|---|---|
+| `driving_stereo` | [DrivingStereo](https://drivingstereo-dataset.github.io/) train / test / weather subsets | left/right RGB, depth, disparity (half- and full-size), per-sequence intrinsics; one split per subset |
+| `kitti_carla` | [KITTI-CARLA](https://arxiv.org/abs/2109.00892) towns | RGB, depth, semantic segmentation of both cameras, lidar sweeps, intrinsics, lidar→camera extrinsics, lidar poses |
+| `muses` | [MUSES](https://muses.vision.ee.ethz.ch/) | frame camera, reference frames, lidar, GNSS/IMU, semantic and panoptic labels, calibration, sensor timing; train/val/test splits |
 | `nuscenes` | [nuScenes](https://www.nuscenes.org/nuscenes) v1.0 trainval / test / mini | camera RGB, synchronised `LIDAR_TOP` sweep, intrinsics, per-frame lidar→camera extrinsics; official scene splits |
 
 `euler-known-datasets list` and `euler-known-datasets info <recipe>` show the
 same from the command line. Per-dataset documentation:
+[DrivingStereo](docs/datasets/driving_stereo.md),
+[KITTI-CARLA](docs/datasets/kitti_carla.md), [MUSES](docs/datasets/muses.md),
 [nuScenes](docs/datasets/nuscenes.md).
 
 ## Documentation
@@ -105,7 +110,11 @@ same from the command line. Per-dataset documentation:
 |---|---|
 | [Concepts](docs/concepts.md) | Recipes, media strategies, the output contract, the receipt, resuming, verification |
 | [Adding a recipe](docs/adding-a-recipe.md) | Writing and testing a recipe for a new dataset |
+| [DrivingStereo](docs/datasets/driving_stereo.md) | Downloads, subsets, scopes, calibration matching |
+| [KITTI-CARLA](docs/datasets/kitti_carla.md) | Town archives, options, lidar indexed per camera, conventions |
+| [MUSES](docs/datasets/muses.md) | Packages, IDs, scopes including the ego-motion inputs |
 | [nuScenes](docs/datasets/nuscenes.md) | Downloads, options, prepared layout, synchronisation, calibration file format |
+| [Roadmap](docs/roadmap.md) | Planned: zip-native and packed outputs, checksums and downloads |
 
 ## Licences
 

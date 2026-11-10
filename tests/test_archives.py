@@ -96,3 +96,50 @@ def test_ledger_matches_archive_destination_and_selection(tmp_path):
 
 def test_selection_fingerprint_ignores_order():
     assert selection_fingerprint(["b", "a"]) == selection_fingerprint(["a", "b"])
+
+
+def _zip(path, members, *, symlinks=()):
+    import stat
+    import zipfile
+
+    with zipfile.ZipFile(path, "w") as zf:
+        for name, content in members.items():
+            zf.writestr(name, content)
+        for name, target in symlinks:
+            info = zipfile.ZipInfo(name)
+            info.external_attr = (stat.S_IFLNK | 0o777) << 16
+            zf.writestr(info, target)
+    return path
+
+
+def test_zip_extraction_is_selective_and_resumable(tmp_path):
+    archive = _zip(tmp_path / "a.zip", {"keep/a.txt": b"a", "drop/b.txt": b"b", "keep/dir/": b""})
+    out = tmp_path / "out"
+    stats = extract_archive(archive, out, select=lambda name: name.startswith("keep/"))
+    assert (out / "keep/a.txt").read_bytes() == b"a"
+    assert not (out / "drop").exists()
+    assert (stats.extracted, stats.skipped_unselected) == (1, 1)
+    assert extract_archive(archive, out).skipped_existing == 1
+
+
+def test_zip_symlinks_are_not_extracted(tmp_path):
+    archive = _zip(tmp_path / "a.zip", {"a.txt": b"a"}, symlinks=[("link", "/etc/passwd")])
+    stats = extract_archive(archive, tmp_path / "out")
+    assert stats.skipped_special == 1
+    assert not (tmp_path / "out/link").exists()
+
+
+def test_zip_traversal_is_rejected(tmp_path):
+    archive = _zip(tmp_path / "a.zip", {"../evil.txt": b"x"})
+    with pytest.raises(UnsafeArchiveError):
+        extract_archive(archive, tmp_path / "out")
+    assert not (tmp_path / "evil.txt").exists()
+
+
+def test_archive_members(tmp_path):
+    from euler_known_datasets.archives import archive_members
+
+    zipped = _zip(tmp_path / "a.zip", {"x/a.txt": b"a", "x/": b""}, symlinks=[("l", "a")])
+    assert archive_members(zipped) == ["x/a.txt"]
+    tarred = _tar(tmp_path / "a.tgz", {"./x/a.txt": b"a"}, links=[("l", "a")])
+    assert archive_members(tarred) == ["x/a.txt"]

@@ -127,11 +127,14 @@ def verify(
     listings = DirectoryCache()
     inventory = None
     if check_loaders:
-        inventory = euler_loading_inventory()
-        if inventory is None or not register_euler_loading_validator():
+        if not register_euler_loading_validator():
             report.warnings.append(
-                "euler-loading is not installed; loader names and its head rules not checked"
+                "the euler_loading head addon rules are unavailable (needs "
+                "euler-dataset-contract >= 0.14 or euler-loading); heads not fully checked"
             )
+        inventory = euler_loading_inventory()
+        if inventory is None:
+            report.warnings.append("euler-loading is not installed; loader names not checked")
 
     for scope in receipt.get("scopes", []):
         scope_report = ScopeReport(scope=scope)
