@@ -26,9 +26,11 @@ TIMES_OF_DAY = ("day", "night")
 BENCHMARK = {"crop": {"top": 270, "right": 20, "bottom": 20, "left": 170}, "max_depth_m": 28}
 RGB_GRID = {"height": 1024, "width": 1920}
 GATED_GRID = {"height": 720, "width": 1280}
-#: Value ranges of the release, in meters (checked 2026-11-10 on all files).
+#: Value ranges of the release, in meters (checked 2026-11-10 on all files):
+#: ground truth reaches 58.9 m, lidar 106 m, SGM and PSMNet a few hundred
+#: meters. Monodepth's near-zero disparities give far larger outliers.
 GROUND_TRUTH_RANGE = [0, 60]
-LIDAR_RANGE = [0, 40]
+LIDAR_RANGE = [0, 120]
 METHOD_RANGE = [0, 500]
 
 _INVALID_ZERO = {"non_finite": False, "sentinel": 0}
@@ -68,6 +70,13 @@ CALIBRATION_FILE = {"intrinsics": "calib_cam_stereo_left.json", "gated_intrinsic
 
 def _weather_selected(weather: str, wanted: tuple[str, ...]) -> bool:
     return not wanted or weather in wanted or re.match(r"[a-z]+", weather).group(0) in wanted
+
+
+def _weather_order(weather: str) -> tuple[int, int]:
+    """clear, then fog by visibility, then rain by rate."""
+    match = re.fullmatch(r"([a-z]+?)(\d*)", weather)
+    kind, level = match.group(1), int(match.group(2) or 0)
+    return ({"clear": 0, "fog": 1, "rain": 2}.get(kind, 3), level)
 
 
 def condition_attributes(weather: str) -> dict[str, int]:
@@ -198,7 +207,8 @@ class Cerema(Recipe):
         attributes = {"source": "Pixel-Accurate Depth Benchmark (CEREMA)",
                       "scenes": scenes_needed,
                       "time_of_day": sorted({FRAME.match(f + ".png").group("time_of_day") for f in frames}),
-                      "weather": sorted({FRAME.match(f + ".png").group("weather") for f in frames})}
+                      "weather": sorted({FRAME.match(f + ".png").group("weather") for f in frames},
+                                        key=_weather_order)}
         execution = {"recipe": self.name, "layout_version": self.layout_version,
                      "options": {k: list(v) if isinstance(v, tuple) else v for k, v in ctx.options.items()}}
         files: dict[str, int] = {}

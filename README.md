@@ -93,6 +93,7 @@ heads name.
 
 | Recipe | Dataset | Prepared modalities |
 |---|---|---|
+| `acdc` | [ACDC](https://acdc.vision.ee.ethz.ch) (fog, night, rain, snow) | anonymised images and their normal-condition references, joined by ID; official train/val/test splits |
 | `cerema` | CEREMA Pixel-Accurate Depth Benchmark (Gruber et al., 3DV 2019) | stereo RGB, gated slices, lidar projected into both cameras, dense ground-truth depth, intrinsics; SGM / PSMNet / Monodepth / Sparse-to-Dense outputs as baselines |
 | `driving_stereo` | [DrivingStereo](https://drivingstereo-dataset.github.io/) train / test / weather subsets | left/right RGB, depth, disparity (half- and full-size), per-sequence intrinsics; one split per subset |
 | `kitti_carla` | [KITTI-CARLA](https://arxiv.org/abs/2109.00892) towns | RGB, depth, semantic segmentation of both cameras, lidar sweeps, intrinsics, lidar→camera extrinsics, lidar poses |
@@ -102,6 +103,7 @@ heads name.
 
 `euler-known-datasets list` and `euler-known-datasets info <recipe>` show the
 same from the command line. Per-dataset documentation:
+[ACDC](docs/datasets/acdc.md),
 [CEREMA](docs/datasets/cerema.md),
 [DrivingStereo](docs/datasets/driving_stereo.md),
 [KITTI-CARLA](docs/datasets/kitti_carla.md), [MUSES](docs/datasets/muses.md),
@@ -113,6 +115,7 @@ same from the command line. Per-dataset documentation:
 |---|---|
 | [Concepts](docs/concepts.md) | Recipes, media strategies, the output contract, the receipt, resuming, verification |
 | [Adding a recipe](docs/adding-a-recipe.md) | Writing and testing a recipe for a new dataset |
+| [ACDC](docs/datasets/acdc.md) | Downloads (registration), pairing images with references, splits |
 | [CEREMA](docs/datasets/cerema.md) | The nested release zip, scopes and baselines, ground truth per scene, the benchmark's protocol |
 | [DrivingStereo](docs/datasets/driving_stereo.md) | Downloads, subsets, scopes, calibration matching |
 | [KITTI-CARLA](docs/datasets/kitti_carla.md) | Town archives, options, lidar indexed per camera, conventions |

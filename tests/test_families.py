@@ -9,6 +9,7 @@ import pytest
 from euler_known_datasets import prepare, verify
 from euler_known_datasets.artifacts import family_dataset
 
+from .fake_acdc import build_fake_acdc
 from .fake_cerema import build_fake_cerema
 from .fake_driving_stereo import build_fake_driving_stereo
 from .fake_kitti_carla import build_fake_kitti_carla
@@ -23,6 +24,7 @@ BUILDERS = {
     "muses": build_fake_muses,
     "scatternerf": build_fake_scatternerf,
     "cerema": build_fake_cerema,
+    "acdc": build_fake_acdc,
 }
 
 

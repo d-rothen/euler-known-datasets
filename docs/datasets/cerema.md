@@ -58,6 +58,9 @@ prepare("cerema", "/data/downloads/CEREMA", "/data/cerema",
         modalities=["rgb", "lidar", "depth", "intrinsics"], weather=["clear", "fog"])
 ```
 
+On Lustre, preparing everything from the release zip takes about 4 minutes
+and writes 25 GB. A re-run with everything extracted takes a few seconds.
+
 ## Options
 
 | Option | Default | Meaning |
@@ -145,9 +148,13 @@ split. The hierarchy selects conditions.
 ### Depth
 
 - **Depth is z-depth in meters**, with `0` where invalid, for the ground
-  truth, the lidar and `sparse2dense`. The projected lidar agrees with the
-  ground truth with a median ratio of 1.000 over the off-axis angles (scene 1,
-  clear). A radial range would grow by up to 10 % towards the image corners.
+  truth, the lidar and `sparse2dense`. In clear weather the projected lidar
+  agrees with the ground truth with a median ratio of 1.000–1.004 in every
+  scene and in both grids, and shows no trend with the off-axis angle. A
+  radial range would grow by up to 10 % towards the image corners.
+- **Value ranges.** The ground truth is valid at every pixel. It reaches
+  58.9 m in scene 1 and 26.8 m in scenes 2–4. Lidar returns reach 106 m
+  (median density 0.3 % of the pixels).
 - **The ground truth is a static scan per scene.** It was acquired with a
   Leica ScanStation P30 from several accumulated positions; mannequins stood
   in for pedestrians so that the scene stayed fixed. The benchmark code
@@ -163,6 +170,23 @@ split. The hierarchy selects conditions.
     multiplied by 1920. The paper fine-tuned it on SeeingThroughFog's
     training split.
   - `sparse2dense`: metric depth on the full grid already.
+- **Monodepth has extreme outliers.** Its near-zero disparities become
+  depths of up to 10¹² m. The benchmark clips predictions at 28 m, so they
+  count as far; filter or clip them before use.
+- **The conversions check out.** Measured against the ground truth inside
+  the benchmark crop and up to 28 m, without hole filling, the median
+  absolute relative error (median over frames) is:
+
+  | Condition | SGM | PSMNet | Monodepth | Sparse-to-Dense |
+  |---|---|---|---|---|
+  | day, clear | 0.026 | 0.048 | 0.134 | 0.050 |
+  | day, fog 40 m | 0.041 | 0.063 | 0.186 | 0.453 |
+  | day, rain 55 | 0.051 | 0.085 | 0.187 | 0.395 |
+  | night, clear | 0.039 | 0.064 | 0.188 | 0.051 |
+  | night, fog 40 m | 0.137 | 0.124 | 0.163 | 0.333 |
+
+  SGM matches only about half of the pixels in the crop (median coverage
+  0.49); the others are `0`.
 
 ### Evaluation protocol (as published)
 
@@ -217,4 +241,6 @@ first with the `cerema` module. Without torch, pass `loader=` from
   Back-projecting a map with its camera's intrinsics gives camera-frame
   points, rounded to pixel centres.
 - **The release ships three gated slices** (`0`, `17`, `31`, as named). The
-  recipe does not interpret the slice numbers.
+  recipe does not interpret the slice numbers. Their raw values reach about
+  1240, so the benchmark's dark-level subtraction and clipping to 10 bits
+  saturates the brightest pixels.

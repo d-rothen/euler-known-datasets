@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Recipe `acdc` for ACDC: the anonymised adverse-condition images (`rgb`) and
+  their normal-condition references (`reference_rgb`), joined by ID, with the
+  official splits. It reads the official zip, an archive of a whole ACDC copy
+  (one streaming pass with a path filter), or the extracted tree. Options
+  select scopes, conditions and splits.
 - Recipe `cerema` for the CEREMA Pixel-Accurate Depth Benchmark: stereo RGB,
   gated slices, lidar projected into both cameras, dense per-scene ground
   truth, intrinsics, and the SGM / PSMNet / Monodepth / Sparse-to-Dense
