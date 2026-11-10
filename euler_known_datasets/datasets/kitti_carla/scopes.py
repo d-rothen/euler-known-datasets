@@ -136,9 +136,9 @@ LIDAR_DATASET = {"id": "kitti_carla_lidar", "name": "KITTI-CARLA lidar sweeps pe
 LIDAR_MODALITY = {
     "key": "lidar_point_cloud",
     "meta": {
-        "form": "point_cloud",
+        "representation": "point_cloud",
         "columns": LIDAR_COLUMNS,
-        "unit": "meters",
+        "coordinate_unit": "meters",
         "frame": "lidar",
         "axes": "x_forward_y_left_z_up",
     },
@@ -155,7 +155,7 @@ FILE_SCOPES = {
         pattern_text=_CALIBRATION,
         id_regex=_CALIBRATION_ID,
         dataset={"id": "kitti_carla_intrinsics", "name": "KITTI-CARLA camera intrinsics"},
-        modality={"key": "intrinsics", "meta": {"model": "pinhole", "layout": "3x3"}},
+        modality={"key": "intrinsics", "meta": {"camera_model": "pinhole", "dimensions": {"rows": 3, "columns": 3}}},
         function="read_intrinsics",
         per_camera=True,
     ),
@@ -171,10 +171,10 @@ FILE_SCOPES = {
         modality={
             "key": "camera_extrinsics",
             "meta": {
-                "layout": "4x4",
-                "direction": "lidar_to_camera",
                 "source_frame": "lidar",
                 "target_frame": "camera_optical",
+                "direction": "target_from_source",
+                "dimensions": {"rows": 4, "columns": 4},
             },
         },
         function="read_extrinsics",
@@ -189,10 +189,10 @@ FILE_SCOPES = {
         modality={
             "key": "lidar_pose",
             "meta": {
-                "layout": "4x4",
-                "direction": "lidar_to_world",
                 "source_frame": "lidar",
                 "target_frame": "world",
+                "direction": "target_from_source",
+                "dimensions": {"rows": 4, "columns": 4},
             },
         },
         function="lidar_pose",

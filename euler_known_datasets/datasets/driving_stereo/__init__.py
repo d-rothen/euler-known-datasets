@@ -349,7 +349,7 @@ class DrivingStereo(Recipe):
                     "name": "DrivingStereo rectified camera intrinsics (half size)",
                     "attributes": attributes,
                 },
-                modality={"key": "intrinsics", "meta": {"model": "pinhole", "layout": "3x3"}},
+                modality={"key": "intrinsics", "meta": {"camera_model": "pinhole", "dimensions": {"rows": 3, "columns": 3}}},
                 addons=_addon("read_intrinsics"),
                 tree=tree,
                 execution=execution,

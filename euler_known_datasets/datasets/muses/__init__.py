@@ -99,9 +99,9 @@ class SharedFile:
 
 
 _LIDAR_META = {
-    "form": "point_cloud",
+    "representation": "point_cloud",
     "columns": ["x", "y", "z", "intensity", "ring", "timestamp"],
-    "unit": "meters",
+    "coordinate_unit": "meters",
     "frame": "lidar",
 }
 
@@ -128,15 +128,15 @@ FRAME_MODALITIES = (
 )
 SHARED_FILES = (
     SharedFile("intrinsics", CALIB, "MUSES frame-camera intrinsics", "intrinsics",
-               "read_intrinsics", {"model": "pinhole", "layout": "3x3"}),
+               "read_intrinsics", {"camera_model": "pinhole", "dimensions": {"rows": 3, "columns": 3}}),
     SharedFile("camera_extrinsics", CALIB, "MUSES lidar-to-camera extrinsics",
                "camera_extrinsics", "read_extrinsics",
-               {"layout": "4x4", "direction": "lidar_to_camera", "source_frame": "lidar",
-                "target_frame": "camera_optical"}),
+               {"source_frame": "lidar", "target_frame": "camera_optical",
+                "direction": "target_from_source", "dimensions": {"rows": 4, "columns": 4}}),
     SharedFile("lidar_to_gnss", CALIB, "MUSES lidar-to-GNSS/IMU mount", "lidar_to_gnss",
                "read_lidar_to_gnss",
-               {"layout": "4x4", "direction": "lidar_to_gnss", "source_frame": "lidar",
-                "target_frame": "gnss"}),
+               {"source_frame": "lidar", "target_frame": "gnss",
+                "direction": "target_from_source", "dimensions": {"rows": 4, "columns": 4}}),
     SharedFile("sensor_timing", META, "MUSES per-frame sensor timing", "sensor_timing",
                "sensor_timing"),
 )

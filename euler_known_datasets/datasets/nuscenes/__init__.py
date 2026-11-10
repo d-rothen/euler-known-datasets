@@ -657,18 +657,24 @@ class NuScenes(Recipe):
                 {"id": "nuscenes_lidar", "name": f"nuScenes {LIDAR} sweeps paired with camera frames"},
                 {
                     "key": "lidar_point_cloud",
+                    # The euler-dataset-contract's conventions, as in its
+                    # reference heads (fixtures/heads/valid/phase0-*.json).
                     "meta": {
-                        "form": "point_cloud",
+                        "representation": "point_cloud",
                         "columns": ["x", "y", "z", "intensity", "ring"],
-                        "unit": "meters",
+                        "coordinate_unit": "meters",
                         "frame": LIDAR,
+                        "axes": "x right, y forward, z up",
                     },
                 },
                 addon("lidar_point_cloud"),
             ),
             SCOPE_INTRINSICS: (
                 {"id": "nuscenes_intrinsics", "name": "nuScenes camera intrinsics"},
-                {"key": "intrinsics", "meta": {"model": "pinhole", "layout": "3x3"}},
+                {
+                    "key": "intrinsics",
+                    "meta": {"camera_model": "pinhole", "dimensions": {"rows": 3, "columns": 3}},
+                },
                 addon("read_intrinsics"),
             ),
             SCOPE_EXTRINSICS: (
@@ -676,10 +682,10 @@ class NuScenes(Recipe):
                 {
                     "key": "camera_extrinsics",
                     "meta": {
-                        "layout": "4x4",
-                        "direction": "lidar_to_camera",
                         "source_frame": LIDAR,
                         "target_frame": "camera_optical",
+                        "direction": "target_from_source",
+                        "dimensions": {"rows": 4, "columns": 4},
                     },
                 },
                 addon("read_extrinsics"),

@@ -315,7 +315,10 @@ def test_loads_in_euler_loading(fake, tmp_path):
     pytest.importorskip("euler_loading")
     from euler_loading import Modality, MultiModalDataset
 
-    from . import reference_loaders as nus
+    try:  # euler-loading's own module, from the release after 2.39.0
+        from euler_loading.loaders.cpu import nuscenes as nus
+    except ImportError:
+        from . import reference_loaders as nus
 
     out = tmp_path / "prepared"
     prepare("nuscenes", fake.source, out, cameras=["CAM_FRONT_LEFT"])
@@ -348,3 +351,23 @@ def test_loads_in_euler_loading(fake, tmp_path):
     assert np.allclose(sample["intrinsics"], INTRINSICS)
     doc = json.loads((out / "calibration" / scene.split(":")[1] / "CAM_FRONT_LEFT.json").read_text())
     assert np.allclose(sample["extrinsics"], doc["frames"][file_id]["lidar"]["lidar_to_camera"])
+
+
+def test_heads_follow_the_contract_conventions(fake, tmp_path):
+    """Geometry meta uses euler-dataset-contract's vocabulary (its phase-0 reference heads)."""
+    out = tmp_path / "prepared"
+    prepare("nuscenes", fake.source, out, cameras=["CAM_FRONT_LEFT"])
+
+    def meta(scope):
+        return json.loads((out / ".ds_crawler" / scope / "dataset-head.json").read_text())["modality"]["meta"]
+
+    assert meta("camera_extrinsics") == {
+        "source_frame": "LIDAR_TOP",
+        "target_frame": "camera_optical",
+        "direction": "target_from_source",
+        "dimensions": {"rows": 4, "columns": 4},
+    }
+    assert meta("intrinsics") == {"camera_model": "pinhole", "dimensions": {"rows": 3, "columns": 3}}
+    lidar = meta("lidar")
+    assert lidar["representation"] == "point_cloud" and lidar["coordinate_unit"] == "meters"
+    assert lidar["columns"] == ["x", "y", "z", "intensity", "ring"]

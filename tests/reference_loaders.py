@@ -1,4 +1,4 @@
-"""Minimal readers of the nuScenes layout v1, standing in for euler-loading's future module."""
+"""Minimal readers of the nuScenes layout v1, for euler-loading releases without `nuscenes`."""
 from __future__ import annotations
 
 import json
@@ -9,16 +9,24 @@ from PIL import Image
 
 
 def rgb(path, meta=None, *, attributes=None):
-    return np.asarray(Image.open(path).convert("RGB"), dtype=np.float32) / 255.0
+    with Image.open(path) as image:
+        return np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
 
 
 def lidar_point_cloud(path, meta=None, *, attributes=None):
-    data = path.read() if hasattr(path, "read") else open(path, "rb").read()
+    if hasattr(path, "read"):
+        data = path.read()
+    else:
+        with open(path, "rb") as handle:
+            data = handle.read()
     return np.frombuffer(data, dtype=np.float32).reshape(-1, 5).copy()
 
 
 def _doc(path):
-    return json.load(path) if hasattr(path, "read") else json.load(open(path))
+    if hasattr(path, "read"):
+        return json.load(path)
+    with open(path) as handle:
+        return json.load(handle)
 
 
 def read_intrinsics(path, meta=None, *, attributes=None):
