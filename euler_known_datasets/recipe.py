@@ -13,9 +13,9 @@ import abc
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Iterable, Mapping, Optional
+from typing import Any, Callable, ClassVar, Iterable, Mapping, Optional, Sequence
 
-from .archives import ExtractionLedger, ExtractionStats, extract_archive
+from .archives import ExtractionLedger, ExtractionStats, archive_label, extract_archive
 
 logger = logging.getLogger(__name__)
 
@@ -126,24 +126,29 @@ class PrepareContext:
         destination: Optional[Path] = None,
         select: Optional[Callable[[str], bool]] = None,
         fingerprint: str = "all",
+        inner: Sequence[str] = (),
     ) -> Optional[ExtractionStats]:
         """Extract *archive* (selected members only) unless already done.
 
         *fingerprint* identifies the selection; an archive already extracted
         with the same fingerprint into the same destination is skipped.
+        *inner* extracts a zip nested in the zip *archive* instead (see
+        :func:`~euler_known_datasets.archives.open_nested_zip`).
         Returns ``None`` when skipped.
         """
         destination = destination or self.output
+        inner = tuple(inner)
+        label = archive_label(archive, inner)
         ledger = ExtractionLedger(self.state_dir)
-        if ledger.is_complete(archive, destination, fingerprint):
-            logger.info("%s: already extracted into %s, skipping", archive.name, destination)
+        if ledger.is_complete(archive, destination, fingerprint, inner):
+            logger.info("%s: already extracted into %s, skipping", label, destination)
             return None
-        logger.info("extracting %s into %s", archive.name, destination)
-        stats = extract_archive(archive, destination, select=select)
-        ledger.mark_complete(archive, destination, fingerprint, stats)
+        logger.info("extracting %s into %s", label, destination)
+        stats = extract_archive(archive, destination, select=select, inner=inner)
+        ledger.mark_complete(archive, destination, fingerprint, stats, inner)
         logger.info(
             "%s: %d files extracted (%.2f GB), %d already present, %d not needed, %.0fs",
-            archive.name,
+            label,
             stats.extracted,
             stats.bytes_written / 1e9,
             stats.skipped_existing,

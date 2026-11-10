@@ -9,16 +9,20 @@ import pytest
 from euler_known_datasets import prepare, verify
 from euler_known_datasets.artifacts import family_dataset
 
+from .fake_cerema import build_fake_cerema
 from .fake_driving_stereo import build_fake_driving_stereo
 from .fake_kitti_carla import build_fake_kitti_carla
 from .fake_muses import build_fake_muses
 from .fake_nuscenes import build_fake_nuscenes
+from .fake_scatternerf import build_fake_scatternerf
 
 BUILDERS = {
     "nuscenes": build_fake_nuscenes,
     "driving_stereo": build_fake_driving_stereo,
     "kitti_carla": build_fake_kitti_carla,
     "muses": build_fake_muses,
+    "scatternerf": build_fake_scatternerf,
+    "cerema": build_fake_cerema,
 }
 
 
@@ -39,8 +43,10 @@ def test_every_scope_carries_the_family(recipe, tmp_path):
     for scope, head in heads.items():
         assert head["dataset"]["id"] == recipe, scope
         assert head["dataset"]["name"] == recipe, scope
-        assert head["dataset"]["attributes"]["gt"] is True, scope
-        assert head["dataset"]["attributes"]["baseline"] is False, scope
+        attributes = head["dataset"]["attributes"]
+        # Ground truth, or a published baseline's output shipped with the dataset.
+        assert (attributes["gt"], attributes["baseline"]) in ((True, False), (False, True)), scope
+    assert any(head["dataset"]["attributes"]["gt"] for head in heads.values())
     assert not [w for w in verify(out).warnings if "family" in w]
 
 

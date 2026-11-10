@@ -89,11 +89,14 @@ alike.
 
 **One family per dataset.** Every scope of a prepared dataset has the same
 `dataset` block: `id` and `name` are the dataset family, i.e. the recipe name
-(`nuscenes`, `driving_stereo`, `kitti_carla`, `muses`), and the attributes mark
-it as ground truth (`gt: true`, `baseline: false`). The family is the one
-descriptor that unites the scopes, and euler-view groups datasets into families
-by it. The scopes themselves differ by their modality key and metadata scope.
-`verify` warns when an output's scopes do not share the recipe's family.
+(`nuscenes`, `driving_stereo`, `kitti_carla`, `muses`, …), and the attributes
+mark it as ground truth (`gt: true`, `baseline: false`). A release that ships
+the outputs of published methods, such as the CEREMA benchmark's, prepares
+them as scopes of the same family marked `gt: false, baseline: true`, with a
+`method` attribute. The family is the one descriptor that unites the scopes,
+and euler-view groups datasets into families by it. The scopes themselves
+differ by their modality key and metadata scope. `verify` warns when an
+output's scopes do not share the recipe's family.
 
 ## The receipt
 

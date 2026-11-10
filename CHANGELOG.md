@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- Recipe `cerema` for the CEREMA Pixel-Accurate Depth Benchmark: stereo RGB,
+  gated slices, lidar projected into both cameras, dense per-scene ground
+  truth, intrinsics, and the SGM / PSMNet / Monodepth / Sparse-to-Dense
+  outputs as baseline scopes (`gt: false, baseline: true, method`). Options
+  select scopes, scenes, time of day and weather.
+- Nested zips are read in place: `extract_archive`, `archive_members` and
+  `PrepareContext.extract` take `inner=` (member names leading to a zip inside
+  a zip), and `open_nested_zip` opens one. A stored inner zip is read through
+  a window onto its parent; a compressed one is spooled to a temporary file.
+  The extraction ledger tells nested archives apart. `scatternerf` uses this
+  instead of unpacking nested copies.
+- A dataset family may include baseline scopes: the family test and docs
+  accept `gt: false, baseline: true` next to ground truth.
+- Recipe `scatternerf` for ScatterNeRF: left/right RGB, per-image intrinsics and
+  camera-to-world poses, each sequence's metric scale (from the 0.203 m
+  stereo baseline) in the pose files' `scale_to_meters`. It follows the
+  release's nested, duplicated archives and reads each sequence once. The
+  release has no lidar.
 - Every scope of a prepared dataset shares one `dataset` block: `id` and `name`
   are the dataset family, i.e. the recipe name, and the attributes carry
   `gt: true, baseline: false`. Previously each scope had its own id, such as
