@@ -1,0 +1,16 @@
+euler-known-datasets
+Copyright (c) 2026 Daniel Rothenpieler. Licensed under the MIT License (LICENSE).
+
+This package contains data derived from third-party software:
+
+euler_known_datasets/datasets/nuscenes/scene_splits.json
+  The official nuScenes scene split lists from nuscenes-devkit
+  (python-sdk/nuscenes/utils/splits.py, commit
+  b40adc467b919192899405d9b77871afee8efa07),
+  https://github.com/nutonomy/nuscenes-devkit
+  Licensed under the Apache License, Version 2.0:
+  https://www.apache.org/licenses/LICENSE-2.0
+
+No dataset content (images, point clouds, annotations or metadata tables) is
+included. Each dataset keeps its own licence; nuScenes is licensed under
+CC BY-NC-SA 4.0 for non-commercial use.
