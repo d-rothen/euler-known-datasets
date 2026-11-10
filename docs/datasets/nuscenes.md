@@ -233,7 +233,7 @@ uvw = np.asarray(sample["intrinsics"]) @ camera[:, camera[2] > 1.0]
 pixels, depth = uvw[:2] / uvw[2], uvw[2]
 ```
 
-euler-loading's `nuscenes` module (in the release after 2.39.0) reads the
+euler-loading's `nuscenes` module (2.40.0 and later) reads the
 four scopes, and the heads name it, so the dataset loads without explicit
 loaders; `verify` warns when the installed euler-loading predates it. Its
 functions:

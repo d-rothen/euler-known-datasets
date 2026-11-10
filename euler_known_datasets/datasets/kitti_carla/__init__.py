@@ -13,7 +13,13 @@ from pathlib import Path
 from typing import Any
 
 from ...archives import archive_members, selection_fingerprint
-from ...artifacts import IndexTree, file_entry, write_regex_scope, write_scope
+from ...artifacts import (
+    IndexTree,
+    family_dataset,
+    file_entry,
+    write_regex_scope,
+    write_scope,
+)
 from ...media import (
     IN_PLACE,
     MediaError,
@@ -27,7 +33,6 @@ from .scopes import (
     CAMERAS,
     FILE_SCOPES,
     IMAGE_SCOPES,
-    LIDAR_DATASET,
     LIDAR_FUNCTION,
     LIDAR_MODALITY,
     LIDAR_PATTERN,
@@ -264,7 +269,7 @@ class KittiCarla(Recipe):
                 root,
                 scope,
                 files=files_of(scope),
-                dataset={**spec.dataset, "attributes": attributes},
+                dataset=family_dataset(self.name, attributes),
                 modality=spec.modality,
                 indexing=spec.indexing,
                 addons=addon(spec.function),
@@ -288,7 +293,7 @@ class KittiCarla(Recipe):
             write_scope(
                 root,
                 LIDAR_SCOPE,
-                dataset={**LIDAR_DATASET, "attributes": attributes},
+                dataset=family_dataset(self.name, attributes),
                 modality=LIDAR_MODALITY,
                 tree=tree,
                 addons=addon(LIDAR_FUNCTION),
@@ -301,7 +306,7 @@ class KittiCarla(Recipe):
                 root,
                 scope,
                 files=files_of(scope),
-                dataset={**spec.dataset, "attributes": attributes},
+                dataset=family_dataset(self.name, attributes),
                 modality=spec.modality,
                 indexing=spec.indexing,
                 addons=addon(spec.function),

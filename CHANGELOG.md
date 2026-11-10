@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Every scope of a prepared dataset shares one `dataset` block: `id` and `name`
+  are the dataset family, i.e. the recipe name, and the attributes carry
+  `gt: true, baseline: false`. Previously each scope had its own id, such as
+  `nuscenes_lidar`. `artifacts.family_dataset` builds the block, and `verify`
+  warns when scopes do not share the family. `kitti_carla` and `muses` match the
+  families euler-view already uses.
+- `docs/roadmap.md` §3 formalizes typed descriptions (`euler_representation`)
+  for prepared modalities: the problem, its constraints, a derive-don't-store
+  design, and open questions.
 - Recipes `driving_stereo`, `kitti_carla` and `muses`. Their indexing
   knowledge (regexes, hierarchy, head meta) moves here from euler-loading's
   documentation and tests. Each accepts the official zip downloads or their
@@ -16,11 +25,15 @@
   into an output, and `media.list_files` lists files with one directory read
   each (no per-file `stat()`).
 - Prepared indexes are written with ds-crawler's public `build_index_output` and
-  `save_dataset_index` (2.17+); older ds-crawler falls back to the previous
-  internal call.
-- Heads are checked against the `euler_loading` addon rules from
-  euler-dataset-contract 0.14+, with no need to import euler-loading. `verify`
-  reports the rules and the loader inventory separately.
+  `save_dataset_index`. Requires `ds-crawler>=2.17.0`.
+- Heads are checked against the `euler_loading` addon rules, which
+  euler-dataset-contract owns from 0.14, with no need to import euler-loading.
+  Requires `euler-dataset-contract>=0.14.0`; tests use euler-loading 2.40's
+  `nuscenes` loaders.
+- Geometry heads use the contract's vocabulary: transforms declare
+  `source_frame`, `target_frame`, `direction: target_from_source` and
+  `dimensions`; intrinsics `camera_model`; point clouds `representation`,
+  `columns`, `coordinate_unit`.
 - `docs/roadmap.md`: zip-native and packed outputs; checksums and downloads.
 
 ## 0.1.0

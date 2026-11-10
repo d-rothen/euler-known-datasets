@@ -22,24 +22,39 @@ from typing import Any, Iterable, Iterator, Mapping, Optional, Sequence
 from ds_crawler import (
     build_crawler_config,
     build_dataset_head,
+    build_index_output,
     create_mapped_dataset_splits,
     index_dataset_from_files,
-    validate_output,
+    save_dataset_index,
 )
 
 from ._contract import register_euler_loading_validator
 from ._version import generator_info
 
-try:  # ds-crawler >= 2.17
-    from ds_crawler import build_index_output, save_dataset_index
-except ImportError:  # pragma: no cover - older ds-crawler
-    build_index_output = None
-    save_dataset_index = None
-
-INDEX_CONTRACT = {"kind": "dataset_index", "version": "1.0"}
 METADATA_DIR = ".ds_crawler"
 
 QualifiedId = tuple  # (*hierarchy_keys, file_id)
+
+#: Prepared datasets are recorded ground truth, flagged like the ecosystem's
+#: other ground-truth heads.
+GROUND_TRUTH_ATTRIBUTES = {"gt": True, "baseline": False}
+
+
+def family_dataset(
+    family: str, attributes: Optional[Mapping[str, Any]] = None
+) -> dict[str, Any]:
+    """The ``dataset`` block shared by every scope of a prepared dataset.
+
+    The dataset family, the recipe name such as ``"nuscenes"``, is both id and
+    name in every scope: it is the one descriptor that unites them (euler-view
+    groups datasets into families by it), and scopes differ by their modality
+    key. *attributes* add to the ground-truth flags.
+    """
+    return {
+        "id": family,
+        "name": family,
+        "attributes": {**GROUND_TRUTH_ATTRIBUTES, **dict(attributes or {})},
+    }
 
 
 def file_entry(
@@ -87,38 +102,13 @@ class IndexTree:
         return self._root
 
 
-def _prebuilt_output(
-    head: dict[str, Any], index: dict[str, Any], execution: dict[str, Any]
-) -> dict[str, Any]:
-    if build_index_output is not None:
-        return build_index_output(
-            head=head, index=index, generator=generator_info(), execution=execution
-        )
-    output = {  # pragma: no cover - older ds-crawler
-        "contract": dict(INDEX_CONTRACT),
-        "head_file": "dataset-head.json",
-        "generator": generator_info(),
-        "execution": execution,
-        "head": head,
-        "indexing": {},
-        "index": index,
-    }
-    validate_output(output)  # pragma: no cover
-    return output  # pragma: no cover
-
-
 def _save(root: Path, output: dict[str, Any], scope: str) -> Path:
     scope_dir = root / METADATA_DIR / scope
     if scope_dir.is_dir():
         # Splits describe the previous index of this scope.
         for stale in scope_dir.glob("split_*.json"):
             stale.unlink()
-    if save_dataset_index is not None:
-        return save_dataset_index(root, output, metadata_scope=scope)
-    from ds_crawler.artifacts import save_output_artifacts  # pragma: no cover
-
-    validate_output(output)  # pragma: no cover
-    return save_output_artifacts(root, output, metadata_scope=scope)  # pragma: no cover
+    return save_dataset_index(root, output, metadata_scope=scope)
 
 
 def _head(
@@ -144,12 +134,17 @@ def write_scope(
 ) -> Path:
     """Write one scope with a prebuilt index and return the index path.
 
-    The dataset head is validated against the euler dataset contract (and, when
-    installed, euler-loading's addon rules) before anything is written. Split
-    files a previous run left in the scope are removed.
+    The dataset head is validated against the euler dataset contract, including
+    the ``euler_loading`` addon rules, before anything is written. Split files a
+    previous run left in the scope are removed.
     """
     head = _head(dataset, modality, addons)
-    output = _prebuilt_output(head, tree.to_dict(), dict(execution or {}))
+    output = build_index_output(
+        head=head,
+        index=tree.to_dict(),
+        generator=generator_info(),
+        execution=dict(execution or {}),
+    )
     return _save(Path(root), output, scope)
 
 

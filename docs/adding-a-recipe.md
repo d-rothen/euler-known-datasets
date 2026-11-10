@@ -18,7 +18,13 @@ where these facts are written down once.
 from pathlib import Path
 
 from euler_known_datasets import Option, Outcome, Plan, PrepareContext, Recipe, register
-from euler_known_datasets.artifacts import IndexTree, file_entry, write_scope, write_splits
+from euler_known_datasets.artifacts import (
+    IndexTree,
+    family_dataset,
+    file_entry,
+    write_scope,
+    write_splits,
+)
 
 
 @register
@@ -56,7 +62,7 @@ class MyDataset(Recipe):
         write_scope(
             ctx.output,
             "rgb",
-            dataset={"id": "my_dataset_rgb", "name": "My Dataset RGB"},
+            dataset=family_dataset(self.name),  # id and name: "my_dataset"
             modality={"key": "rgb", "meta": {"range": [0, 255]}},
             addons={"euler_loading": {"version": "1.0", "loader": "generic_dense_depth", "function": "rgb"}},
             tree=tree,
@@ -82,6 +88,10 @@ Guidelines:
   or `media.missing_files` (see [network filesystems](concepts.md#network-filesystems)).
 - **Heads** name an euler-loading loader that exists, or one added there in
   step. Keep experiment roles (`used_as`, `slot`) out of dataset heads.
+- **One family.** Build every scope's `dataset` block with
+  `family_dataset(self.name, attributes)`, so all scopes share the recipe name
+  as id and name. Name a recipe after the family euler-view already uses for
+  the dataset, if there is one.
 
 ## 3. Test it without the dataset
 

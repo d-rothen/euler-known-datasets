@@ -19,7 +19,13 @@ import numpy as np
 
 from ..._jsonio import write_json_atomic
 from ...archives import selection_fingerprint
-from ...artifacts import IndexTree, file_entry, write_scope, write_splits
+from ...artifacts import (
+    IndexTree,
+    family_dataset,
+    file_entry,
+    write_scope,
+    write_splits,
+)
 from ...media import (
     IN_PLACE,
     MediaError,
@@ -649,12 +655,10 @@ class NuScenes(Recipe):
 
         heads = {
             SCOPE_RGB: (
-                {"id": "nuscenes_rgb", "name": "nuScenes camera images"},
                 {"key": "rgb", "meta": {"range": [0, 255]}},
                 addon("rgb"),
             ),
             SCOPE_LIDAR: (
-                {"id": "nuscenes_lidar", "name": f"nuScenes {LIDAR} sweeps paired with camera frames"},
                 {
                     "key": "lidar_point_cloud",
                     # The euler-dataset-contract's conventions, as in its
@@ -670,7 +674,6 @@ class NuScenes(Recipe):
                 addon("lidar_point_cloud"),
             ),
             SCOPE_INTRINSICS: (
-                {"id": "nuscenes_intrinsics", "name": "nuScenes camera intrinsics"},
                 {
                     "key": "intrinsics",
                     "meta": {"camera_model": "pinhole", "dimensions": {"rows": 3, "columns": 3}},
@@ -678,7 +681,6 @@ class NuScenes(Recipe):
                 addon("read_intrinsics"),
             ),
             SCOPE_EXTRINSICS: (
-                {"id": "nuscenes_camera_extrinsics", "name": "nuScenes lidar-to-camera extrinsics"},
                 {
                     "key": "camera_extrinsics",
                     "meta": {
@@ -691,11 +693,11 @@ class NuScenes(Recipe):
                 addon("read_extrinsics"),
             ),
         }
-        for scope, (dataset, modality, addons) in heads.items():
+        for scope, (modality, addons) in heads.items():
             path = write_scope(
                 ctx.output,
                 scope,
-                dataset={**dataset, "attributes": attributes},
+                dataset=family_dataset(self.name, attributes),
                 modality=modality,
                 addons=addons,
                 tree=trees[scope],

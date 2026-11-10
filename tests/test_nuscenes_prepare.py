@@ -314,11 +314,7 @@ def test_verify_reports_missing_files(fake, tmp_path):
 def test_loads_in_euler_loading(fake, tmp_path):
     pytest.importorskip("euler_loading")
     from euler_loading import Modality, MultiModalDataset
-
-    try:  # euler-loading's own module, from the release after 2.39.0
-        from euler_loading.loaders.cpu import nuscenes as nus
-    except ImportError:
-        from . import reference_loaders as nus
+    from euler_loading.loaders.cpu import nuscenes as nus
 
     out = tmp_path / "prepared"
     prepare("nuscenes", fake.source, out, cameras=["CAM_FRONT_LEFT"])

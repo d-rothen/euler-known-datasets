@@ -80,10 +80,20 @@ plus the lidar sweeps paired with its frames.
 └── ...                           the dataset's media and recipe-specific files
 ```
 
-Every scope's index is *prebuilt* (`source.prebuilt_index_file`). Its IDs and
-hierarchy come from the recipe rather than from path regexes, so they can carry
-facts paths do not encode: a scene, or the camera frame a lidar sweep belongs
-to. ds-crawler and euler-loading read it like any other index.
+A scope's index is either *regex-indexed*, with the regexes kept in
+`ds-crawler.json` so it can be re-crawled, or *prebuilt*
+(`source.prebuilt_index_file`). A prebuilt index takes its IDs and hierarchy
+from the recipe, so it can carry facts paths do not encode: a scene, or the
+camera frame a lidar sweep belongs to. ds-crawler and euler-loading read both
+alike.
+
+**One family per dataset.** Every scope of a prepared dataset has the same
+`dataset` block: `id` and `name` are the dataset family, i.e. the recipe name
+(`nuscenes`, `driving_stereo`, `kitti_carla`, `muses`), and the attributes mark
+it as ground truth (`gt: true`, `baseline: false`). The family is the one
+descriptor that unites the scopes, and euler-view groups datasets into families
+by it. The scopes themselves differ by their modality key and metadata scope.
+`verify` warns when an output's scopes do not share the recipe's family.
 
 ## The receipt
 
@@ -123,10 +133,10 @@ For every scope the receipt lists, it checks that:
 - every indexed file exists;
 - every split loads.
 
-With euler-loading installed, it also checks each dataset head against
-euler-loading's addon rules, and warns when the named `loader.function` is
-missing from the installed euler-loading. It reads euler-loading's
-`loaders.json` for that, without importing torch. The exit status is non-zero
+Each dataset head is checked against euler-dataset-contract, including the
+rules of the `euler_loading` addon. With euler-loading installed, `verify`
+also warns when the named `loader.function` is missing from it, reading
+euler-loading's `loaders.json` without importing torch. The exit status is non-zero
 on errors, so it works as a job prologue.
 
 ## Network filesystems

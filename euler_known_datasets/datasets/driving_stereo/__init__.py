@@ -18,6 +18,7 @@ from ds_crawler import collect_qualified_ids, get_files
 from ...archives import archive_members, selection_fingerprint
 from ...artifacts import (
     IndexTree,
+    family_dataset,
     file_entry,
     write_regex_scope,
     write_scope,
@@ -249,11 +250,7 @@ class DrivingStereo(Recipe):
                 ctx.output,
                 stream.scope,
                 files=sorted(paths),
-                dataset={
-                    "id": f"driving_stereo_{stream.scope}",
-                    "name": f"DrivingStereo {stream.title}",
-                    "attributes": attributes,
-                },
+                dataset=family_dataset(self.name, attributes),
                 modality={"key": stream.key, "meta": stream.meta},
                 addons=_addon(stream.function),
                 indexing=stream.indexing(),
@@ -344,11 +341,7 @@ class DrivingStereo(Recipe):
             write_scope(
                 ctx.output,
                 INTRINSICS_SCOPE,
-                dataset={
-                    "id": "driving_stereo_intrinsics",
-                    "name": "DrivingStereo rectified camera intrinsics (half size)",
-                    "attributes": attributes,
-                },
+                dataset=family_dataset(DrivingStereo.name, attributes),
                 modality={"key": "intrinsics", "meta": {"camera_model": "pinhole", "dimensions": {"rows": 3, "columns": 3}}},
                 addons=_addon("read_intrinsics"),
                 tree=tree,

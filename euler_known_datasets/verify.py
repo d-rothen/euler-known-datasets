@@ -126,16 +126,13 @@ def verify(
 
     listings = DirectoryCache()
     inventory = None
+    register_euler_loading_validator()
     if check_loaders:
-        if not register_euler_loading_validator():
-            report.warnings.append(
-                "the euler_loading head addon rules are unavailable (needs "
-                "euler-dataset-contract >= 0.14 or euler-loading); heads not fully checked"
-            )
         inventory = euler_loading_inventory()
         if inventory is None:
             report.warnings.append("euler-loading is not installed; loader names not checked")
 
+    families: dict[str, str] = {}
     for scope in receipt.get("scopes", []):
         scope_report = ScopeReport(scope=scope)
         report.scopes.append(scope_report)
@@ -147,6 +144,7 @@ def verify(
             continue
         head = index.get("head", {})
         scope_report.dataset_id = head.get("dataset", {}).get("id", "")
+        families[scope] = scope_report.dataset_id
         scope_report.modality = head.get("modality", {}).get("key", "")
         addon = head.get("addons", {}).get("euler_loading", {})
         if addon.get("loader") and addon.get("function"):
@@ -174,4 +172,12 @@ def verify(
                 scope_report.splits[split] = len(get_files(split_output))
             except Exception as exc:  # noqa: BLE001
                 scope_report.errors.append(f"split {split!r} does not load: {exc}")
+    if len(set(families.values())) > 1 or (
+        families and report.recipe and set(families.values()) != {report.recipe}
+    ):
+        listed = ", ".join(f"{scope}={family!r}" for scope, family in families.items())
+        report.warnings.append(
+            f"the scopes do not share the dataset family {report.recipe!r} as their "
+            f"dataset id: {listed}; prepare again to update the heads"
+        )
     return report

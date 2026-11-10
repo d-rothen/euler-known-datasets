@@ -35,7 +35,6 @@ class ImageScope:
     scope: str
     folder: str
     prefix: str  # before the camera digit: "" (rgb), "1" (segmentation), "2" (depth)
-    dataset: dict[str, Any]
     modality: dict[str, Any]
     function: str
 
@@ -71,7 +70,6 @@ class FileScope:
     file_id: str
     pattern_text: str  # hierarchy regex; names ``town`` and, per camera, ``camera``
     id_regex: str  # one capture group; its value is replaced by ``file_id``
-    dataset: dict[str, Any]
     modality: dict[str, Any]
     function: str
     per_camera: bool
@@ -95,7 +93,6 @@ IMAGE_SCOPES = {
         scope="rgb",
         folder="images_rgb",
         prefix="",
-        dataset={"id": "kitti_carla_rgb", "name": "KITTI-CARLA RGB"},
         modality={"key": "rgb", "meta": {"range": [0, 255]}},
         function="rgb",
     ),
@@ -103,7 +100,6 @@ IMAGE_SCOPES = {
         scope="depth",
         folder="images_depth",
         prefix="2",
-        dataset={"id": "kitti_carla_depth", "name": "KITTI-CARLA depth"},
         # The PNG stores CARLA's 24-bit code; scale_to_meters turns a code into
         # planar metres, the code 2**24 - 1 being the 1000 m far plane. The
         # loader decodes it with its own constants.
@@ -121,10 +117,6 @@ IMAGE_SCOPES = {
         scope="semantic_segmentation",
         folder="images_ss",
         prefix="1",
-        dataset={
-            "id": "kitti_carla_semantic_segmentation",
-            "name": "KITTI-CARLA semantic segmentation",
-        },
         modality={"key": "semantic_segmentation", "meta": {"skyclass": SKY}},
         function="class_segmentation",
     ),
@@ -132,7 +124,6 @@ IMAGE_SCOPES = {
 
 LIDAR_SCOPE = "lidar"
 LIDAR_PATTERN = re.compile(r"^(?P<town>Town\d{2})/generated/frames/frame_(?P<frame>\d+)\.ply$")
-LIDAR_DATASET = {"id": "kitti_carla_lidar", "name": "KITTI-CARLA lidar sweeps per camera frame"}
 LIDAR_MODALITY = {
     "key": "lidar_point_cloud",
     "meta": {
@@ -154,7 +145,6 @@ FILE_SCOPES = {
         file_id="intrinsics",
         pattern_text=_CALIBRATION,
         id_regex=_CALIBRATION_ID,
-        dataset={"id": "kitti_carla_intrinsics", "name": "KITTI-CARLA camera intrinsics"},
         modality={"key": "intrinsics", "meta": {"camera_model": "pinhole", "dimensions": {"rows": 3, "columns": 3}}},
         function="read_intrinsics",
         per_camera=True,
@@ -164,10 +154,6 @@ FILE_SCOPES = {
         file_id="extrinsics",
         pattern_text=_CALIBRATION,
         id_regex=_CALIBRATION_ID,
-        dataset={
-            "id": "kitti_carla_camera_extrinsics",
-            "name": "KITTI-CARLA lidar-to-camera extrinsics",
-        },
         modality={
             "key": "camera_extrinsics",
             "meta": {
@@ -185,7 +171,6 @@ FILE_SCOPES = {
         file_id="lidar_pose",
         pattern_text=r"^(?P<town>Town\d{2})/generated/full_poses_lidar\.txt$",
         id_regex=r"^Town\d{2}/generated/(full_poses_lidar)\.txt$",
-        dataset={"id": "kitti_carla_lidar_pose", "name": "KITTI-CARLA lidar poses"},
         modality={
             "key": "lidar_pose",
             "meta": {

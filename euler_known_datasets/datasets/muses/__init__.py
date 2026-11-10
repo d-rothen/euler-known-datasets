@@ -17,7 +17,7 @@ from typing import Any, Iterable
 from ds_crawler import collect_qualified_ids, get_files
 
 from ...archives import selection_fingerprint
-from ...artifacts import write_regex_scope, write_splits
+from ...artifacts import family_dataset, write_regex_scope, write_splits
 from ...media import (
     IN_PLACE,
     MediaError,
@@ -263,7 +263,7 @@ class Muses(Recipe):
                 ctx.output,
                 modality.scope,
                 files=candidates,
-                dataset={"id": f"muses_{modality.scope}", "name": modality.name},
+                dataset=family_dataset(self.name),
                 modality={"key": modality.key, "meta": dict(modality.meta)},
                 addons=self._addon(modality.function),
                 indexing=modality.indexing(),
@@ -285,7 +285,7 @@ class Muses(Recipe):
                 ctx.output,
                 shared.scope,
                 files=[shared.path],
-                dataset={"id": f"muses_{shared.scope}", "name": shared.name},
+                dataset=family_dataset(self.name),
                 modality={"key": shared.key, "meta": dict(shared.meta)},
                 addons=self._addon(shared.function),
                 indexing=shared.indexing(),
