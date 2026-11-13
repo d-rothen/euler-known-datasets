@@ -1,0 +1,48 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*" # Only runs for tags starting with 'v', e.g. v0.1.0
+
+jobs:
+  build-and-publish:
+    name: Build and Publish
+    runs-on: ubuntu-latest
+    environment: pypi
+
+    permissions:
+      id-token: write # Allows OIDC (passwordless) trusted publishing to PyPI
+      contents: read # Required to check out the code
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Verify tag matches project version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(uvx --from hatch hatch version)"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::Tag v$tag does not match pyproject.toml version $version"
+            exit 1
+          fi
+          echo "Publishing version $version"
+
+      # rm -rf first: uv build adds to dist/ rather than replacing it, and
+      # uv publish uploads everything it finds there. On a runner with a reused
+      # workspace that would mean re-uploading a previous run's artifacts.
+      - name: Build package
+        run: |
+          rm -rf dist
+          uv build
+
+      - name: Check metadata
+        run: uvx twine check dist/*
+
+      - name: Publish to PyPI
+        # uv publish automatically detects it is in GitHub Actions and uses OIDC
+        run: uv publish
