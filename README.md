@@ -96,18 +96,23 @@ heads name.
 | `acdc` | [ACDC](https://acdc.vision.ee.ethz.ch) (fog, night, rain, snow) | anonymised images and their normal-condition references, joined by ID; official train/val/test splits |
 | `cerema` | CEREMA Pixel-Accurate Depth Benchmark (Gruber et al., 3DV 2019) | stereo RGB, gated slices, lidar projected into both cameras, dense ground-truth depth, intrinsics; SGM / PSMNet / Monodepth / Sparse-to-Dense outputs as baselines |
 | `driving_stereo` | [DrivingStereo](https://drivingstereo-dataset.github.io/) train / test / weather subsets | left/right RGB, depth, disparity (half- and full-size), per-sequence intrinsics; one split per subset |
+| `hypersim` | [Hypersim](https://github.com/apple/ml-hypersim) (Roberts et al., ICCV 2021) | tone-mapped HDR colour, planar depth and the released radial distances, exact intrinsics of the tilt-shift cameras, metric camera poses; official v1 splits |
 | `kitti_carla` | [KITTI-CARLA](https://arxiv.org/abs/2109.00892) towns | RGB, depth, semantic segmentation of both cameras, lidar sweeps, intrinsics, lidar→camera extrinsics, lidar poses |
 | `muses` | [MUSES](https://muses.vision.ee.ethz.ch/) | frame camera, reference frames, lidar, GNSS/IMU, semantic and panoptic labels, calibration, sensor timing; train/val/test splits |
 | `nuscenes` | [nuScenes](https://www.nuscenes.org/nuscenes) v1.0 trainval / test / mini | camera RGB, synchronised `LIDAR_TOP` sweep, intrinsics, per-frame lidar→camera extrinsics; official scene splits |
 | `scatternerf` | ScatterNeRF (Ramazzina et al., ICCV 2023) foggy stereo sequences | left/right RGB, per-image intrinsics, camera-to-world poses with a per-sequence metric scale; no lidar in the release |
+| `shift` | [SHIFT](https://www.vis.xyz/shift) (Sun et al., CVPR 2022) discrete set, front camera | RGB, planar depth, semantic labels (sky exact), intrinsics, camera-to-world poses; frames chosen by weather, time of day, spacing and ego motion; official train/val splits |
+| `urbansyn` | [UrbanSyn](https://www.urbansyn.org) (Gómez et al., Neurocomputing 2025), synthetic Barcelona and Berlin | RGB, planar depth, Cityscapes semantic labels, intrinsics, camera-to-world poses from the depth maps' headers; no splits |
 
 `euler-known-datasets list` and `euler-known-datasets info <recipe>` show the
 same from the command line. Per-dataset documentation:
 [ACDC](docs/datasets/acdc.md),
 [CEREMA](docs/datasets/cerema.md),
 [DrivingStereo](docs/datasets/driving_stereo.md),
+[Hypersim](docs/datasets/hypersim.md),
 [KITTI-CARLA](docs/datasets/kitti_carla.md), [MUSES](docs/datasets/muses.md),
-[nuScenes](docs/datasets/nuscenes.md), [ScatterNeRF](docs/datasets/scatternerf.md).
+[nuScenes](docs/datasets/nuscenes.md), [ScatterNeRF](docs/datasets/scatternerf.md),
+[SHIFT](docs/datasets/shift.md), [UrbanSyn](docs/datasets/urbansyn.md).
 
 ## Documentation
 
@@ -118,10 +123,13 @@ same from the command line. Per-dataset documentation:
 | [ACDC](docs/datasets/acdc.md) | Downloads (registration), pairing images with references, splits |
 | [CEREMA](docs/datasets/cerema.md) | The nested release zip, scopes and baselines, ground truth per scene, the benchmark's protocol |
 | [DrivingStereo](docs/datasets/driving_stereo.md) | Downloads, subsets, scopes, calibration matching |
+| [Hypersim](docs/datasets/hypersim.md) | Partial downloads, tone mapping, distance vs. planar depth, the tilt-shift camera model |
 | [KITTI-CARLA](docs/datasets/kitti_carla.md) | Town archives, options, lidar indexed per camera, conventions |
 | [MUSES](docs/datasets/muses.md) | Packages, IDs, scopes including the ego-motion inputs |
 | [nuScenes](docs/datasets/nuscenes.md) | Downloads, options, prepared layout, synchronisation, calibration file format |
 | [ScatterNeRF](docs/datasets/scatternerf.md) | Nested duplicate archives, metric scale from the stereo baseline, why there is no lidar |
+| [SHIFT](docs/datasets/shift.md) | The retired server and the video-rate mirror, decoding frames, frame selection, depth and label facts, the pose convention |
+| [UrbanSyn](docs/datasets/urbansyn.md) | Downloads, scenes, depth convention and units, incomplete depth maps, poses from the EXR headers |
 | [Roadmap](docs/roadmap.md) | Planned: zip-native and packed outputs, checksums and downloads |
 
 ## Licences

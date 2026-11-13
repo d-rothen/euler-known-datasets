@@ -33,9 +33,11 @@ dependencies = [
 [project.optional-dependencies]
 # orjson parses the multi-gigabyte nuScenes tables several times faster.
 fast = ["orjson"]
+# Hypersim keeps its images and camera trajectories in HDF5 files.
+hypersim = ["h5py"]
 # euler-loading (no torch needed) lets the tests load prepared outputs the way
 # users will.
-dev = ["pytest", "ruff", "euler-loading>=2.40.0", "Pillow"]
+dev = ["pytest", "ruff", "euler-loading>=2.40.0", "Pillow", "h5py"]
 
 [project.scripts]
 euler-known-datasets = "euler_known_datasets.cli:main"

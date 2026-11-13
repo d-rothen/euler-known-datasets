@@ -12,10 +12,13 @@ from euler_known_datasets.artifacts import family_dataset
 from .fake_acdc import build_fake_acdc
 from .fake_cerema import build_fake_cerema
 from .fake_driving_stereo import build_fake_driving_stereo
+from .fake_hypersim import build_fake_hypersim
 from .fake_kitti_carla import build_fake_kitti_carla
 from .fake_muses import build_fake_muses
 from .fake_nuscenes import build_fake_nuscenes
 from .fake_scatternerf import build_fake_scatternerf
+from .fake_shift import build_fake_shift
+from .fake_urbansyn import build_fake_urbansyn
 
 BUILDERS = {
     "nuscenes": build_fake_nuscenes,
@@ -25,6 +28,9 @@ BUILDERS = {
     "scatternerf": build_fake_scatternerf,
     "cerema": build_fake_cerema,
     "acdc": build_fake_acdc,
+    "hypersim": build_fake_hypersim,
+    "urbansyn": build_fake_urbansyn,
+    "shift": build_fake_shift,
 }
 
 

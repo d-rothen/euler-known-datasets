@@ -7,7 +7,7 @@ import json
 import pytest
 from ds_crawler import index_dataset_from_path
 
-from euler_known_datasets.artifacts import write_regex_scope
+from euler_known_datasets.artifacts import IndexTree, file_entry, write_regex_scope, write_scope
 from euler_known_datasets.media import (
     MediaError,
     list_files,
@@ -48,6 +48,30 @@ def test_regex_scope_indexes_paths_that_need_not_exist(tmp_path):
     loaded = index_dataset_from_path(tmp_path, metadata_scope="rgb")
     files = loaded["index"]["children"]["scene:scene_a"]["files"]
     assert [f["id"] for f in files] == ["frame-0001", "frame-0002"]
+
+
+def test_prebuilt_scope_declares_its_hierarchy_separator(tmp_path):
+    """Hierarchy keys are name:value pairs that consumers can split, e.g. to
+    select a scene or to name output folders by value."""
+    tree = IndexTree()
+    tree.add(("scene:a", "camera:cam_00"), file_entry("a/0000.png", "0000"))
+    tree.add(("scene:b", "camera:cam_00"), file_entry("b/0000.png", "0000"))
+    head = {"dataset": {"id": "demo", "name": "demo"}, "modality": {"key": "rgb", "meta": {"range": [0, 255]}}}
+    write_scope(tmp_path, "rgb", tree=tree, **head)
+    config = json.loads((tmp_path / ".ds_crawler/rgb/ds-crawler.json").read_text())
+    assert config["indexing"] == {"hierarchy": {"separator": ":"}}
+    assert config["source"]["prebuilt_index_file"]
+    loaded = index_dataset_from_path(tmp_path, metadata_scope="rgb")
+    assert loaded["indexing"]["hierarchy"]["separator"] == ":"
+    assert sorted(loaded["index"]["children"]) == ["scene:a", "scene:b"]
+
+    bad = IndexTree()
+    bad.add(("a",), file_entry("a/0000.png", "0000"))
+    with pytest.raises(ValueError, match="separator"):
+        write_scope(tmp_path / "bad", "rgb", tree=bad, **head)
+    write_scope(tmp_path / "plain", "rgb", tree=bad, hierarchy_separator=None, **head)
+    config = json.loads((tmp_path / "plain/.ds_crawler/rgb/ds-crawler.json").read_text())
+    assert "hierarchy" not in config["indexing"]
 
 
 def test_regex_scope_rejects_duplicate_ids(tmp_path):

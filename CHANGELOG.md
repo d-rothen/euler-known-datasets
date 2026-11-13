@@ -2,6 +2,48 @@
 
 ## Unreleased
 
+- Recipe `shift` for SHIFT's discrete set, front camera: images (`rgb`),
+  planar depth in CARLA's 24-bit code (`depth`), semantic labels with the ID
+  in red (`semantic_segmentation`, sky `[13, 0, 0]`), and, from a
+  `calibration/<split>/<sequence>.json` written per sequence, the intrinsics
+  and per-frame camera-to-world poses (`camera_pose`). The poses mirror
+  CARLA's left-handed world by negating y, with the rotation
+  `Rz(-r2) Ry(r1) Rx(-r0)`; depth reprojects between frames with a median
+  error of 0.14 % on 30 real frame pairs. The hierarchy is
+  `/split/weather/time_of_day/sequence/` with coarse conditions, and the fine
+  conditions and CARLA weather parameters are file attributes. Options select
+  scopes, splits, weather, time of day, a frame step, and a motion filter
+  (`min_motion_m`, `min_rotation_deg`) that drops frames where the camera
+  barely moved; the selection code is shared with the tool that decodes
+  frames from the video-rate mirror (`selection.py`). A frame is kept only if
+  every selected scope has its file. The recipe reads shift-dev's image-rate
+  zips, their extracted folders, or frames decoded from the videos (merged
+  label set, `decoded_from_videos.json`); `det_2d.json` (several GB) is
+  streamed.
+- Recipe `urbansyn` for UrbanSyn: images (`rgb`), planar depth in units of
+  1e5 m (`depth`), Cityscapes train-ID labels (`semantic_segmentation`, sky
+  `[10, 10, 10]`), the intrinsics from `camera_metadata.json`, and per-frame
+  camera-to-world poses read from the depth EXRs' headers (`camera_pose`),
+  with the district as hierarchy (`/scene:<scene>/<frame>`). The depth
+  convention, units, intrinsics and poses were checked together by
+  reprojecting depth between frames. The 57 depth maps that lack the static
+  scene (frames 6973–7029) are left out of `depth` unless
+  `keep_incomplete_depth` is set. The recipe reads the per-modality zips or
+  their extracted folders. Options select scopes and scenes.
+- Recipe `hypersim` for Hypersim: the HDR colour (`rgb`, with each frame's
+  tone-mapping scale computed by Hypersim's operator), planar depth (`depth`,
+  from the released Euclidean distances; `radial_distance` keeps those), per-scene
+  intrinsics and per-frame camera-to-world poses in meters, in
+  `calibration/<scene>/<camera>.json`. The camera model decomposes Hypersim's
+  `M_cam_from_uv` into an exact pinhole `K` and the image's optical frame, so
+  the tilt-shift scenes (272 of 482, up to 41.5°) are handled; checked against
+  Hypersim's world-space positions to within float16 precision. The recipe
+  reads extracted scene folders, partial downloads or the per-scene zips, with
+  the official v1 splits. Options select scopes, scenes, splits and a frame
+  step. Frame 0 of 38 trajectories, rendered with a stretched or mirrored
+  camera, and the black renders of two scenes are left out and listed in the
+  receipt (option `keep_dark_frames` keeps the latter). Needs `h5py` (extra
+  `hypersim`).
 - Recipe `acdc` for ACDC: the anonymised adverse-condition images (`rgb`) and
   their normal-condition references (`reference_rgb`), joined by ID, with the
   official splits. It reads the official zip, an archive of a whole ACDC copy
