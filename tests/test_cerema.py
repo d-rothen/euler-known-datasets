@@ -14,7 +14,15 @@ from euler_known_datasets.datasets import cerema  # noqa: F401  (registers the r
 from euler_known_datasets.datasets.cerema import SCOPES, condition_attributes
 from euler_known_datasets.datasets.cerema.sources import FOLDERS, discover
 
-from .fake_cerema import FRAMES, HEIGHT, NO_GATED_LIDAR, P_RGB, WIDTH, build_fake_cerema, ground_truth
+from .fake_cerema import (
+    FRAMES,
+    HEIGHT,
+    NO_GATED_LIDAR,
+    P_RGB,
+    WIDTH,
+    build_fake_cerema,
+    ground_truth,
+)
 
 BF = 0.202993 * 2355.722801
 N = len(FRAMES)

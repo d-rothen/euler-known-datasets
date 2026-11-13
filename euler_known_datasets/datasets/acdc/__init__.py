@@ -17,7 +17,14 @@ from ds_crawler import collect_qualified_ids, get_files
 
 from ...archives import selection_fingerprint
 from ...artifacts import family_dataset, write_regex_scope, write_splits
-from ...media import IN_PLACE, MediaError, link_top_level, list_files, materialize_files, resolve_media
+from ...media import (
+    IN_PLACE,
+    MediaError,
+    link_top_level,
+    list_files,
+    materialize_files,
+    resolve_media,
+)
 from ...recipe import Option, Outcome, Plan, PrepareContext, Recipe, register
 from .sources import CONDITIONS, DOCS, IMAGE, SPLITS, TYPE, AcdcSource, discover
 

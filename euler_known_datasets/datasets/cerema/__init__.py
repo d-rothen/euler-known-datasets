@@ -15,9 +15,24 @@ from typing import Any, Optional
 
 from ...archives import selection_fingerprint
 from ...artifacts import IndexTree, family_dataset, file_entry, write_scope
-from ...media import IN_PLACE, MediaError, link_top_level, materialize_files, missing_files, resolve_media
+from ...media import (
+    IN_PLACE,
+    MediaError,
+    link_top_level,
+    materialize_files,
+    missing_files,
+    resolve_media,
+)
 from ...recipe import Option, Outcome, Plan, PrepareContext, Recipe, register
-from .sources import CALIBRATION, FRAME, FRAME_FOLDERS, SCENE, SCENE_FOLDERS, FolderSource, discover
+from .sources import (
+    CALIBRATION,
+    FRAME,
+    FRAME_FOLDERS,
+    SCENE,
+    SCENE_FOLDERS,
+    FolderSource,
+    discover,
+)
 
 LOADER_MODULE = "cerema"
 SCENES = ("1", "2", "3", "4")

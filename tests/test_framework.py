@@ -7,7 +7,12 @@ import json
 import pytest
 from ds_crawler import index_dataset_from_path
 
-from euler_known_datasets.artifacts import IndexTree, file_entry, write_regex_scope, write_scope
+from euler_known_datasets.artifacts import (
+    IndexTree,
+    file_entry,
+    write_regex_scope,
+    write_scope,
+)
 from euler_known_datasets.media import (
     MediaError,
     list_files,
